@@ -4,7 +4,6 @@ import torch
 
 
 class SerializedBuffer:
-
     def __init__(self, path, device):
         tmp = torch.load(path)
         self.buffer_size = self._n = tmp['state'].size(0)
@@ -70,7 +69,6 @@ class Buffer(SerializedBuffer):
 
 
 class RolloutBuffer:
-
     def __init__(self, buffer_size, state_shape, action_shape, device, mix=1):
         self._n = 0
         self._p = 0
@@ -103,6 +101,7 @@ class RolloutBuffer:
         self._n = min(self._n + 1, self.total_size)
 
     def get(self):
+        """ 返回顺序的 batch_size 的 buffer 训练策略 pi (PPO)"""
         assert self._p % self.buffer_size == 0
         start = (self._p - self.buffer_size) % self.total_size
         idxes = slice(start, start + self.buffer_size)
@@ -116,6 +115,7 @@ class RolloutBuffer:
         )
 
     def sample(self, batch_size):
+        """ 返回随机的 batch_size 的 buffer, 用于接近专家数据训练判别器 """
         assert self._p % self.buffer_size == 0
         idxes = np.random.randint(low=0, high=self._n, size=batch_size)
         return (

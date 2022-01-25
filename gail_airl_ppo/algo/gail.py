@@ -11,7 +11,7 @@ class GAIL(PPO):
 
     def __init__(self, buffer_exp, state_shape, action_shape, device, seed,
                  gamma=0.995, rollout_length=50000, mix_buffer=1,
-                 batch_size=64, lr_actor=3e-4, lr_critic=3e-4, lr_disc=3e-4,
+                 batch_size=64, lr_actor=4e-3, lr_critic=4e-3, lr_disc=3e-3,
                  units_actor=(64, 64), units_critic=(64, 64),
                  units_disc=(100, 100), epoch_ppo=50, epoch_disc=10,
                  clip_eps=0.2, lambd=0.97, coef_ent=0.0, max_grad_norm=10.0):

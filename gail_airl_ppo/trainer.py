@@ -45,15 +45,21 @@ class Trainer:
             # Pass to the algorithm to update state and episode timestep.
             state, t = self.algo.step(self.env, state, t, step)
 
-            # Update the algorithm whenever ready.
+            # Update the algorithm whenever ready.(Discriminator update)
             if self.algo.is_update(step):
                 self.algo.update(self.writer)
 
             # Evaluate regularly.
             if step % self.eval_interval == 0:
                 self.evaluate(step)
-                self.algo.save_models(
-                    os.path.join(self.model_dir, f'step{step}'))
+                if step > 7e5 :     # 大于50W次后开始保存模型参数
+                    self.algo.save_models(
+                        os.path.join(self.model_dir, f'step{step}'))
+
+            if step % 1e5 == 0:
+                self.algo.lr_actor -= 3e-4
+                self.algo.lr_critic -= 3e-4
+                print("lr_actor: ", self.algo.lr_actor, " lr_critic: ", self.algo.lr_critic)
 
         # Wait for the logging to be finished.
         sleep(10)
@@ -70,6 +76,7 @@ class Trainer:
                 action = self.algo.exploit(state)
                 state, reward, done, _ = self.env_test.step(action)
                 episode_return += reward
+                self.env_test.render()
 
             mean_return += episode_return / self.num_eval_episodes
 

@@ -44,13 +44,20 @@ def run(args):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
-    p.add_argument('--buffer', type=str, required=True)
+    p.add_argument('--buffer', type=str, default='buffers/ppo_exp/Hopper-v3/size1000000_std0.01_prand0.0.pth')
     p.add_argument('--rollout_length', type=int, default=50000)
-    p.add_argument('--num_steps', type=int, default=10**7)
-    p.add_argument('--eval_interval', type=int, default=10**5)
+    p.add_argument('--num_steps', type=int, default=10**6)
+    p.add_argument('--eval_interval', type=int, default=2e4)
     p.add_argument('--env_id', type=str, default='Hopper-v3')
+    
+    # p.add_argument('--buffer', type=str, default="buffers/InvertedPendulum-v2/size1000000_std0.01_prand0.0.pth")
+    # p.add_argument('--rollout_length', type=int, default=2000)
+    # p.add_argument('--num_steps', type=int, default=100000)
+    # p.add_argument('--eval_interval', type=int, default=5000)
+    # p.add_argument('--env_id', type=str, default='InvertedPendulum-v2')
+
     p.add_argument('--algo', type=str, default='gail')
-    p.add_argument('--cuda', action='store_true')
+    p.add_argument('--cuda', action='store_true', default=False)
     p.add_argument('--seed', type=int, default=0)
     args = p.parse_args()
     run(args)

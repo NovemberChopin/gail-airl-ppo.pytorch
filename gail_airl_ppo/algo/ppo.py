@@ -1,8 +1,12 @@
+from numpy import save
 import torch
 from torch import nn
 from torch.optim import Adam
 
+import os
+
 from .base import Algorithm
+from gail_airl_ppo.utils import disable_gradient
 from gail_airl_ppo.buffer import RolloutBuffer
 from gail_airl_ppo.network import StateIndependentPolicy, StateFunction
 
@@ -24,11 +28,14 @@ def calculate_gae(values, rewards, dones, next_values, gamma, lambd):
 class PPO(Algorithm):
 
     def __init__(self, state_shape, action_shape, device, seed, gamma=0.995,
-                 rollout_length=2048, mix_buffer=20, lr_actor=3e-4,
-                 lr_critic=3e-4, units_actor=(64, 64), units_critic=(64, 64),
+                 rollout_length=2048, mix_buffer=20, lr_actor=4e-3,
+                 lr_critic=4e-3, units_actor=(64, 64), units_critic=(64, 64),
                  epoch_ppo=10, clip_eps=0.2, lambd=0.97, coef_ent=0.0,
                  max_grad_norm=10.0):
         super().__init__(state_shape, action_shape, device, seed, gamma)
+
+        self.lr_actor = lr_actor
+        self.lr_critic = lr_critic
 
         # Rollout buffer.
         self.buffer = RolloutBuffer(
@@ -54,8 +61,8 @@ class PPO(Algorithm):
             hidden_activation=nn.Tanh()
         ).to(device)
 
-        self.optim_actor = Adam(self.actor.parameters(), lr=lr_actor)
-        self.optim_critic = Adam(self.critic.parameters(), lr=lr_critic)
+        self.optim_actor = Adam(self.actor.parameters(), lr=self.lr_actor)
+        self.optim_critic = Adam(self.critic.parameters(), lr=self.lr_critic)
 
         self.learning_steps_ppo = 0
         self.rollout_length = rollout_length
@@ -141,4 +148,22 @@ class PPO(Algorithm):
                 'stats/entropy', entropy.item(), self.learning_steps)
 
     def save_models(self, save_dir):
-        pass
+        super().save_models(save_dir)
+        torch.save(self.actor.state_dict(), os.path.join(save_dir, 'actor.pth'))
+        torch.save(self.critic.state_dict(), os.path.join(save_dir, 'critic.pth'))
+
+
+class PPOExpert(PPO):
+
+    def __init__(self, state_shape, action_shape, device, path,
+                 units_actor=(64, 64)):
+        self.actor = StateIndependentPolicy(
+            state_shape=state_shape,
+            action_shape=action_shape,
+            hidden_units=units_actor,
+            hidden_activation=nn.Tanh()
+        ).to(device)
+        self.actor.load_state_dict(torch.load(path, map_location='cpu'))
+
+        disable_gradient(self.actor)
+        self.device = device
